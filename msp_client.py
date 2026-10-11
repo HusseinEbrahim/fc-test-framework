@@ -9,13 +9,12 @@ MSP_FC_VERSION = 3
 MSP_ATTITUDE = 108
 MSP_ANALOG = 110
 
+STM32_VID = 0x0483
+STM32_PID = 0x5740
+
 
 class MSPError(Exception):
     """Raised when the board's reply is missing or invalid."""
-
-
-STM32_VID = 0x0483
-STM32_PID = 0x5740
 
 
 def find_flight_controller():
@@ -24,9 +23,10 @@ def find_flight_controller():
             return port.device
     raise MSPError("No flight controller found. Is it plugged in?")
 
+
 class MSPClient:
-    def __init__(self, port, baudrate=115200, timeout=1.0):
-        self.serial = serial.Serial(port, baudrate, timeout=timeout, write_timeout=2)
+    def __init__(self, connection):
+        self.serial = connection
 
     def close(self):
         self.serial.close()
@@ -91,17 +91,23 @@ class MSPClient:
         payload = self.request(MSP_ANALOG)
         vbat, mah, rssi, amps, volts = struct.unpack("<BHHhH", payload[:9])
         return {
-            "voltage": volts / 100,     # in volts
-            "current": amps / 100,      # in amps
+            "voltage": volts / 100,
+            "current": amps / 100,
             "mah_drawn": mah,
             "rssi": rssi,
         }
-    
+
     def attitude(self):
         payload = self.request(MSP_ATTITUDE)
         roll, pitch, yaw = struct.unpack("<hhh", payload[:6])
         return {
-            "roll": roll/10,
-            "pitch": pitch/10,
+            "roll": roll / 10,
+            "pitch": pitch / 10,
             "yaw": yaw,
-        }   
+        }
+
+
+def open_real_board(port=None):
+    port = port or find_flight_controller()
+    connection = serial.Serial(port, 115200, timeout=1, write_timeout=2)
+    return MSPClient(connection)

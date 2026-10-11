@@ -1,9 +1,6 @@
-from msp_client import MSPClient, find_flight_controller
+from msp_client import open_real_board
 
-port = find_flight_controller()
-print("Found flight controller on", port)
-
-fc = MSPClient(port)
+fc = open_real_board()
 try:
     print("API version:", fc.api_version())
     print("Firmware:   ", fc.fc_variant(), fc.fc_version())
